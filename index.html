@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monaco Info</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+:root{
+  --bg-dark:#0e0e13;
+  --card-dark:#1a1a24;
+  --text-dark:#eaeaf0;
+  --muted-dark:#a0a0b5;
+  --grad-dark:linear-gradient(135deg,#9b5cff,#ff5cc8);
+
+  --bg-light:#f0f0f5;
+  --card-light:#ffffff;
+  --text-light:#111;
+  --muted-light:#555;
+  --grad-light:linear-gradient(135deg,#9b5cff,#ff5cc8);
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:Inter,Arial,sans-serif;
+  background:var(--bg-dark);
+  color:var(--text-dark);
+  transition: background 0.5s, color 0.5s;
+}
+body.light{
+  background:var(--bg-light);
+  color:var(--text-light);
+}
+header{
+  padding:20px 40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.lang button{
+  background:none;
+  border:none;
+  font-weight:600;
+  cursor:pointer;
+  margin-left:14px;
+  opacity:.7;
+  color:inherit;
+}
+.lang button:hover{opacity:1}
+
+.hero{
+  height:90vh;
+  background:var(--grad-dark);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:40px;
+  border-radius:10px;
+  transition: background 0.5s;
+}
+body.light .hero{background:var(--grad-light);}
+.hero h1{
+  font-size:54px;
+  margin-bottom:20px;
+}
+.hero p{
+  font-size:20px;
+  max-width:720px;
+  opacity:.95;
+}
+
+section{
+  max-width:1200px;
+  margin:90px auto;
+  padding:0 30px;
+}
+h2{
+  font-size:34px;
+  margin-bottom:35px;
+}
+
+/* sights */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:28px;
+}
+.card{
+  background:var(--card-dark);
+  border-radius:26px;
+  padding:22px;
+  box-shadow:0 25px 60px rgba(0,0,0,.6);
+  transition:.35s;
+}
+body.light .card{background:var(--card-light); box-shadow:0 10px 30px rgba(0,0,0,.2);}
+.card:hover{transform:translateY(-10px)}
+.card img{
+  width:100%;
+  height:190px;
+  object-fit:cover;
+  border-radius:18px;
+  margin-bottom:18px;
+}
+.card p{color:var(--muted-dark);}
+body.light .card p{color:var(--muted-light);}
+.card small{color:#888}
+
+/* facts slider */
+.facts-wrap{
+  height:50vh;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+}
+.facts{
+  display:flex;
+  transition:transform .9s cubic-bezier(.4,.0,.2,1);
+}
+.fact{
+  min-width:300px;
+  margin:0 18px;
+  padding:34px;
+  border-radius:26px;
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(14px);
+  box-shadow:0 30px 80px rgba(0,0,0,.7);
+  transition:.7s;
+  opacity:.45;
+  transform:scale(.85);
+}
+body.light .fact{background:rgba(0,0,0,.05); box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.fact.active{
+  transform:scale(1.18);
+  opacity:1;
+}
+.fact-controls{
+  text-align:center;
+  margin-top:24px;
+}
+.fact-controls button{
+  padding:12px 20px;
+  font-size:18px;
+  border:none;
+  border-radius:50%;
+  background:#9b5cff;
+  color:white;
+  cursor:pointer;
+}
+
+/* map */
+#map{
+  height:420px;
+  border-radius:30px;
+  box-shadow:0 25px 70px rgba(0,0,0,.7);
+  transition:box-shadow 0.5s;
+}
+body.light #map{box-shadow:0 15px 50px rgba(0,0,0,.2);}
+
+/* impressions */
+form{
+  max-width:520px;
+  margin:auto;
+}
+input,textarea{
+  width:100%;
+  padding:16px;
+  margin-bottom:16px;
+  border-radius:14px;
+  border:none;
+  background:#1e1e2c;
+  color:inherit;
+  transition:background 0.5s, color 0.5s;
+}
+body.light input, body.light textarea{background:#eaeaf0; color:#111;}
+button.submit{
+  background:var(--grad-dark);
+  color:white;
+  border:none;
+  padding:16px;
+  width:100%;
+  border-radius:16px;
+  cursor:pointer;
+  transition:background 0.5s;
+}
+body.light button.submit{background:var(--grad-light);}
+
+footer{
+  text-align:center;
+  padding:40px;
+  color:#777;
+  transition:color 0.5s;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <strong>Monaco Info</strong>
+  <div class="lang">
+    <button onclick="setLang('ru')">RU</button>
+    <button onclick="setLang('en')">EN</button>
+    <button onclick="toggleTheme()">Тема</button>
+  </div>
+</header>
+
+<div class="hero">
+  <div>
+    <h1 data-ru="Добро пожаловать в Монако" data-en="Welcome to Monaco"></h1>
+    <p data-ru="Информационный сайт о городе Монако. Здесь вы узнаете достопримечательности и можете оставить свои впечатления."
+       data-en="An informational website about Monaco. Learn sights and leave your impressions."></p>
+  </div>
+</div>
+
+<section>
+<h2 data-ru="Достопримечательности" data-en="Sights"></h2>
+<div class="grid" id="sights"></div>
+</section>
+
+<section>
+<h2 data-ru="Факты о Монако" data-en="Facts about Monaco"></h2>
+<div class="facts-wrap">
+  <div class="facts" id="facts"></div>
+</div>
+<div class="fact-controls">
+  <button onclick="move(-1)">‹</button>
+  <button onclick="move(1)">›</button>
+</div>
+</section>
+
+<section>
+<h2 data-ru="Карта" data-en="Map"></h2>
+<div id="map"></div>
+</section>
+
+<section>
+<h2 data-ru="Оставьте свои впечатления" data-en="Leave your impression"></h2>
+<form>
+  <input placeholder="Имя / Name" required>
+  <textarea placeholder="Ваше впечатление / Your impression" required></textarea>
+  <button class="submit">Отправить</button>
+</form>
+</section>
+
+<footer>
+Выпускная квалификационная работа • 2026
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let lang='ru';
+
+/* Смена темы */
+function toggleTheme(){
+  document.body.classList.toggle('light');
+}
+
+/* Достопримечательности */
+// сюда вставляешь свои картинки в папку img, просто указываешь имя файла
+const sights=[
+["Казино Монте-Карло","Monte Carlo Casino","Легендарное казино и символ роскоши Монако.","Place du Casino","img/casino.jpg"],
+["Дворец князя","Prince's Palace","Официальная резиденция правящей династии Гримальди.","Monaco-Ville","img/palace.jpg"],
+["Океанографический музей","Oceanographic Museum","Известный музей морской науки.","Avenue Saint-Martin","img/museum.jpg"],
+["Экзотический сад","Exotic Garden","Сад с панорамным видом на Монако.","Boulevard du Jardin Exotique","img/garden.jpg"],
+["Трасса Формулы-1","Formula 1 Circuit","Легендарная городская трасса Гран-при.","Monte-Carlo","img/f1.jpg"]
+];
+
+/* Факты */
+const factsText=[
+"Монако — второе по плотности населения государство в мире",
+"Площадь княжества — всего 2.02 км²",
+"В Монако отсутствует налог на доходы физических лиц",
+"Государство управляется князем",
+"Официальный язык — французский",
+"Один из самых богатых регионов мира",
+"Известно Гран-при Формулы-1",
+"Монако — член ООН с 1993 года",
+"Средиземноморский климат",
+"Берег Лазурного моря"
+];
+
+function render(){
+  document.querySelectorAll('[data-ru]').forEach(e=>e.textContent=e.dataset[lang]);
+
+  document.getElementById('sights').innerHTML=sights.map(s=>`
+  <div class="card">
+    <img src="${s[4]}" alt="${lang==='ru'?s[0]:s[1]}">
+    <h3>${lang==='ru'?s[0]:s[1]}</h3>
+    <p>${s[2]}</p>
+    <small>${s[3]}</small>
+  </div>`).join('');
+
+  document.getElementById('facts').innerHTML=factsText.map(f=>`<div class="fact">${f}</div>`).join('');
+  updateFacts();
+}
+
+let index=1;
+function updateFacts(){
+  const f=document.querySelectorAll('.fact');
+  document.getElementById('facts').style.transform=`translateX(${-index*336}px)`;
+  f.forEach((el,i)=>el.classList.toggle('active',i===index));
+}
+function move(d){
+  index=Math.max(1,Math.min(index+d,factsText.length-2));
+  updateFacts();
+}
+function setLang(l){lang=l;render()}
+
+/* Карта */
+const map=L.map('map').setView([43.7384,7.4246],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.marker([43.7384,7.4246]).addTo(map);
+
+render();
+</script>
+
+</body>
+</html>
